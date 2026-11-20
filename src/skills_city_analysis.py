@@ -67,6 +67,79 @@ print(
     df["has_data_ai_skills"].sum()
 )
 
+# Total job postings per city
+total_city_counts = (
+    df
+    .groupby("city_clean")
+    .size()
+    .sort_values(ascending=False)
+)
+
+print("\n========== TOTAL JOB POSTINGS BY CITY ==========")
+print(total_city_counts.head(15))
+
+# Combine total jobs and Data & AI jobs
+city_percentage_df = pd.DataFrame({
+    "total_jobs": total_city_counts,
+    "data_ai_jobs": data_ai_jobs.groupby("city_clean").size()
+})
+
+city_percentage_df = city_percentage_df.fillna(0)
+
+city_percentage_df["data_ai_percentage"] = (
+    city_percentage_df["data_ai_jobs"]
+    / city_percentage_df["total_jobs"]
+) * 100
+
+# Filter cities with at least 100 job postings
+city_percentage_df = city_percentage_df[
+    city_percentage_df["total_jobs"] >= 100
+]
+
+city_percentage_df = city_percentage_df.sort_values(
+    by="data_ai_percentage",
+    ascending=False
+)
+
+# Exclude non-city location categories
+city_chart_df = city_percentage_df.drop(
+    index=["Anywhere In India"],
+    errors="ignore"
+)
+
+# Select top 10 cities by Data & AI percentage
+top_cities = city_chart_df.head(10)
+
+plt.figure(figsize=(10, 7))
+
+plt.barh(
+    top_cities.index,
+    top_cities["data_ai_percentage"]
+)
+
+plt.xlabel("Data & AI Jobs (%)")
+plt.ylabel("City")
+plt.title("Data & AI Job Share by City")
+
+plt.gca().invert_yaxis()
+plt.tight_layout()
+
+plt.savefig(
+    "reports/data_ai_job_share_by_city.png",
+    dpi=300,
+    bbox_inches="tight"
+)
+
+print("Data & AI percentage chart saved successfully!")
+
+city_percentage_df = city_percentage_df.sort_values(
+    by="data_ai_percentage",
+    ascending=False
+)
+
+print("\n========== DATA & AI JOB PERCENTAGE BY CITY ==========")
+print(city_percentage_df.head(15).round(2))
+
 city_skill_data = {}
 
 for skill in target_skills:
